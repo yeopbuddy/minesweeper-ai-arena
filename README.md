@@ -22,7 +22,7 @@
 ### 🎥 2. 리플레이 재생 기능 (Game Replay System)
 리더보드의 각 기록 옆에 있는 **재생(▶️) 버튼**을 클릭해 보세요!
 - 상위권 랭커들이 어떤 순서로 지뢰를 찾아가는지, AI가 어떤 논리로 복잡한 구간을 돌파하는지 똑같은 속도로 복기할 수 있습니다.
-![Start/Stop Solver Demo](./source/start-stop-solver.gif)
+![Start/Stop Solver Demo](./source/replay.gif)
 
 ### 💡 3. 실시간 AI 힌트 (Live Hint & Probability)
 마우스 오버만으로 현재 칸이 얼마나 안전한지 실시간으로 계산합니다.
