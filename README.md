@@ -7,7 +7,7 @@
 
 ---
 
-<details open>
+<details>
 <summary><strong>🇰🇷 한국어 (Korean)</strong></summary>
 
 ## 🚀 주요 기능 (Key Features)
