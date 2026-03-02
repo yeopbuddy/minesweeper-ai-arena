@@ -32,6 +32,7 @@
 ### 🤖 4. 강력한 내장 솔버 (Built-in Autonomous Solver)
 프로젝트에 탑재된 기본 AI 솔버의 성능을 확인해 보세요.
 - 부분집합 분석(Subset Analysis)과 가설 검증(Lookahead) 기술을 사용하여 인간이 해결하기 어려운 고난도 배치를 초고속으로 풀어냅니다.
+![Start/Stop Solver Demo](./source/start-stop-solver.gif)
 
 ### 🔌 5. 외장 솔버 경쟁 (Open for External Bots)
 자신만의 지뢰찾기 솔버를 개발 중이신가요?
@@ -93,6 +94,7 @@ Calculate the safety probability of each cell in real-time simply by hovering.
 ### 🤖 4. Powerful Built-in Solver
 Experience the power of our native AI solver.
 - It utilizes **Subset Analysis** and **Lookahead (Contradiction Check)** techniques to solve high-difficulty patterns that are nearly impossible for humans to decipher at high speed.
+![Start/Stop Solver Demo](./source/start-stop-solver.gif)
 
 ### 🔌 5. Open for External Bots
 Are you developing your own Minesweeper solver?
