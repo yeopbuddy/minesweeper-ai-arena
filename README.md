@@ -1,7 +1,9 @@
 # 🧨 Minesweeper AI Arena
 
-> **"지뢰찾기의 한계에 도전하세요. 인간의 직관과 AI의 논리가 충돌하는 전장입니다."**
+> **"지뢰찾기의 한계에 도전하세요. 인간의 직관과 AI의 논리가 충돌하는 전장입니다."**   
 > **"Push the boundaries of Minesweeper. Where human intuition meets AI logic."**
+
+### 🔗 Live Demo: [https://minesweeper-ai-arena.vercel.app/](https://minesweeper-ai-arena.vercel.app/)   
 
 ---
 
