@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Minesweeper Pro (Solver Compatible)</title>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.2.3/css/flag-icons.min.css"/>
@@ -17,12 +17,13 @@
             background-color: #c0c0c0;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
+            padding-bottom: 40px;
             font-family: 'Tahoma', sans-serif;
             user-select: none;
+            overflow-x: hidden;
         }
 
         .main-container {
@@ -31,17 +32,31 @@
             align-items: flex-start;
             gap: 20px;
             width: 100%;
-            margin: 20px auto;
+            margin: 60px auto 20px auto;
+            flex-wrap: wrap; /* Allows wrapping on smaller screens */
         }
 
+        /* Center Column */
         .game-column {
-            width: 744px;
+            width: auto;
+            max-width: 100%;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            align-items: center;
             flex-shrink: 0;
             position: relative;
         }
 
+        /* Scrollable wrapper for the board on mobile */
+        .board-scroll-wrapper {
+            max-width: 100vw;
+            overflow-x: auto;
+            padding: 5px;
+            box-sizing: border-box;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Side panels */
         .side-panel-wrapper {
             width: 250px;
             flex-shrink: 0;
@@ -51,15 +66,15 @@
         .donation-container {
             position: fixed;
             top: 10px;
-            right: 15px;
+            right: 10px;
             display: flex;
-            gap: 10px;
+            gap: 8px;
             z-index: 4000;
         }
 
         .donate-btn {
-            width: 45px;
-            height: 45px;
+            width: 40px;
+            height: 40px;
             background: #ffffff;
             border: 2px solid #808080;
             border-radius: 8px;
@@ -69,31 +84,24 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s;
         }
 
-        .donate-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-
-        .donate-btn img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+        .donate-btn:hover { transform: scale(1.1); }
+        .donate-btn img { width: 100%; height: 100%; object-fit: cover; }
 
         /* QR Overlay Modal */
         #qr-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); display: none; z-index: 5000;
+            background: rgba(0,0,0,0.8); display: none; z-index: 5000;
             align-items: center; justify-content: center;
         }
         .qr-box {
             background: white; padding: 20px; border-radius: 12px; position: relative;
             text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            max-width: 90%;
         }
-        .qr-box img { width: 250px; height: 250px; }
+        .qr-box img { width: 100%; max-width: 250px; height: auto; }
         .qr-box .close-qr {
             position: absolute; top: -10px; right: -10px; width: 30px; height: 30px;
             background: #ff0000; color: white; border-radius: 50%; border: 2px solid white;
@@ -106,76 +114,29 @@
             border: 3px solid;
             border-color: #ffffff #808080 #808080 #ffffff;
             padding: 6px;
+            box-sizing: border-box;
         }
 
-        .leaderboard-content {
-            padding: 8px;
-            font-size: 12px;
-        }
-
-        .category-tabs {
-            display: flex;
-            gap: 2px;
-            margin-bottom: 4px;
-        }
-
+        .leaderboard-content { padding: 8px; font-size: 12px; }
+        .category-tabs { display: flex; gap: 2px; margin-bottom: 4px; }
         .category-tab {
-            flex: 1;
-            padding: 4px 0;
-            text-align: center;
-            background: #e1e1e1;
-            border: 2px solid;
-            border-color: #ffffff #808080 #808080 #ffffff;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 9px;
+            flex: 1; padding: 6px 0; text-align: center; background: #e1e1e1;
+            border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;
+            cursor: pointer; font-weight: bold; font-size: 9px; font-family: inherit;
         }
-
-        .category-tab.active {
-            background: #c0c0c0;
-            border-color: #808080 #ffffff #ffffff #808080;
-        }
-
+        .category-tab.active { background: #c0c0c0; border-color: #808080 #ffffff #ffffff #808080; }
         .category-tab:disabled, .rank-tab:disabled { cursor: default; opacity: 0.6; }
 
-        .rank-tabs {
-            display: flex;
-            gap: 2px;
-            margin-bottom: 8px;
-        }
-
+        .rank-tabs { display: flex; gap: 2px; margin-bottom: 8px; }
         .rank-tab {
-            flex: 1;
-            padding: 4px 2px;
-            text-align: center;
-            background: #e1e1e1;
-            border: 2px solid;
-            border-color: #ffffff #808080 #808080 #ffffff;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 10px;
+            flex: 1; padding: 4px 2px; text-align: center; background: #e1e1e1;
+            border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff;
+            cursor: pointer; font-weight: bold; font-size: 10px; font-family: inherit;
         }
+        .rank-tab.active { background: #c0c0c0; border-color: #808080 #ffffff #ffffff #808080; }
 
-        .rank-tab.active {
-            background: #c0c0c0;
-            border-color: #808080 #ffffff #ffffff #808080;
-        }
-
-        .rank-list {
-            background: white;
-            border: 2px solid #808080;
-            height: 280px;
-            overflow-y: auto;
-        }
-
-        .rank-item {
-            display: flex;
-            align-items: center;
-            padding: 6px 6px;
-            border-bottom: 1px solid #eee;
-            font-size: 11px;
-        }
-
+        .rank-list { background: white; border: 2px solid #808080; height: 280px; overflow-y: auto; }
+        .rank-item { display: flex; align-items: center; padding: 6px 6px; border-bottom: 1px solid #eee; font-size: 11px; }
         .rank-item:nth-child(odd) { background: #f9f9f9; }
         .rank-no { font-weight: bold; width: 18px; color: #888; }
         .rank-name { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 5px; display: flex; align-items: center; gap: 6px; }
@@ -189,146 +150,60 @@
             border-color: #ffffff #808080 #808080 #ffffff;
             padding: 6px;
             background-color: #c0c0c0;
-            flex-shrink: 0;
+            display: inline-block;
         }
 
-        .inset-frame {
-            border: 3px solid;
-            border-color: #808080 #ffffff #ffffff #808080;
-            background-color: #c0c0c0;
-        }
-
-        .stats-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 4px 7px;
-            margin-bottom: 6px;
-        }
+        .inset-frame { border: 3px solid; border-color: #808080 #ffffff #ffffff #808080; background-color: #c0c0c0; }
+        .stats-bar { display: flex; justify-content: space-between; align-items: center; padding: 4px 7px; margin-bottom: 6px; }
 
         .lcd-container {
-            background-color: #000;
-            position: relative;
-            padding: 2px 5px;
-            border: 2px solid;
-            border-color: #808080 #ffffff #ffffff #808080;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            width: 70px;
-            height: 38px;
-            box-sizing: border-box;
+            background-color: #000; position: relative; padding: 2px 5px; border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080; display: flex; align-items: center;
+            justify-content: flex-end; width: 70px; height: 38px; box-sizing: border-box;
         }
+        .lcd-bg { color: #330000; font-family: 'Share Tech Mono', monospace; font-size: 32px; line-height: 1; position: absolute; right: 5px; z-index: 1; }
+        .digit-display { color: #ff0000; font-family: 'Share Tech Mono', monospace; font-size: 32px; line-height: 1; position: relative; z-index: 2; text-align: right; }
 
-        .lcd-bg {
-            color: #330000;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 32px;
-            line-height: 1;
-            position: absolute;
-            right: 5px;
-            z-index: 1;
-        }
-
-        .digit-display {
-            color: #ff0000;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 32px;
-            line-height: 1;
-            position: relative;
-            z-index: 2;
-            text-align: right;
-        }
-
-        #smiley {
-            width: 32px;
-            height: 32px;
-            border: 3px solid;
-            border-color: #ffffff #808080 #808080 #ffffff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            background-color: #c0c0c0;
-        }
-        #smiley:active, #smiley.pressed {
-            border-color: #808080 #ffffff #ffffff #808080;
-            padding: 1px 0 0 1px;
-        }
+        #smiley { width: 32px; height: 32px; border: 3px solid; border-color: #ffffff #808080 #808080 #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; background-color: #c0c0c0; }
+        #smiley:active, #smiley.pressed { border-color: #808080 #ffffff #ffffff #808080; padding: 1px 0 0 1px; }
         #smiley svg { width: 24px; height: 24px; pointer-events: none; }
 
-        #board {
-            display: grid;
-            border: 3px solid;
-            border-color: #808080 #ffffff #ffffff #808080;
-        }
-
-        .cell {
-            width: 24px;
-            height: 24px;
-            border: 3px solid;
-            box-sizing: border-box;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: 900;
-        }
-
+        #board { display: grid; border: 3px solid; border-color: #808080 #ffffff #ffffff #808080; }
+        .cell { width: 24px; height: 24px; border: 3px solid; box-sizing: border-box; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; }
         .hd_closed { border-color: #ffffff #808080 #808080 #ffffff; }
         .hd_opened { border: 1px solid #808080; background-color: #c0c0c0; }
         .hd_active { border: 1px solid #808080; background-color: #c0c0c0; }
-
         .hd_type1 { color: #0000ff; } .hd_type2 { color: #008000; } .hd_type3 { color: #ff0000; }
         .hd_type4 { color: #000080; } .hd_type5 { color: #800000; } .hd_type6 { color: #008080; }
         .hd_type7 { color: #000000; } .hd_type8 { color: #808080; }
-
         .mine-hit { background-color: #ff0000 !important; }
 
-        #stats-panel-frame { width: 240px; visibility: hidden; }
+        #stats-panel-frame { width: 100%; visibility: hidden; }
         .stats-panel { width: 100%; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; }
         .stat-box { display: flex; flex-direction: column; gap: 2px; }
         .stat-label { font-size: 11px; font-weight: bold; color: #444; text-transform: uppercase; }
-        .stat-value {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 16px;
-            font-weight: bold;
-            background: #ffffff;
-            border: 1px solid #808080;
-            padding: 4px 6px;
-            text-align: right;
-        }
+        .stat-value { font-family: 'Courier New', Courier, monospace; font-size: 16px; font-weight: bold; background: #ffffff; border: 1px solid #808080; padding: 4px 6px; text-align: right; }
 
-        .menu { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; }
-        .menu button { border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; background: #c0c0c0; padding: 2px 10px; cursor: pointer; font-size: 14px; }
-        #result-banner { margin-bottom: 10px; font-size: 28px; font-weight: 900; text-align: center; height: 35px; }
+        .menu { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; z-index: 3500; flex-wrap: wrap; }
+        .menu button { border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; background: #c0c0c0; padding: 2px 10px; cursor: pointer; font-size: 12px; }
+        #result-banner { margin-bottom: 5px; font-size: 24px; font-weight: 900; text-align: center; height: 30px; margin-top: 40px; }
         
-        #name-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); display: none; z-index: 2000;
-            align-items: center; justify-content: center;
-        }
-        .modal-box {
-            background: #c0c0c0; border: 3px solid; border-color: #ffffff #808080 #808080 #ffffff;
-            padding: 25px 20px 20px 20px; width: 320px; text-align: center; position: relative;
-        }
-        .modal-box input, .modal-box select { width: 100%; padding: 8px; margin-bottom: 10px; border: 2px solid #808080; box-sizing: border-box; font-family: 'Tahoma', sans-serif; }
-        .modal-box button.submit-btn { border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; background: #c0c0c0; padding: 8px 30px; cursor: pointer; font-weight: bold; font-size: 14px; margin-top: 5px; }
-        .modal-box .close-btn { 
-            position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; 
-            border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; 
-            background: #c0c0c0; cursor: pointer; font-size: 12px; font-weight: bold;
-            display: flex; align-items: center; justify-content: center; padding: 0;
-        }
+        #name-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 6000; align-items: center; justify-content: center; }
+        .modal-box { background: #c0c0c0; border: 3px solid; border-color: #ffffff #808080 #808080 #ffffff; padding: 25px 20px 20px 20px; width: 300px; text-align: center; position: relative; }
+        .modal-box input, .modal-box select { width: 100%; padding: 8px; margin-bottom: 10px; border: 2px solid #808080; box-sizing: border-box; font-family: inherit; }
+        .modal-box button.submit-btn { border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; background: #c0c0c0; padding: 8px 30px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .modal-box .close-btn { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; background: #c0c0c0; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
 
-        #replay-banner {
-            position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
-            background: rgba(255, 0, 0, 0.9); color: white; padding: 8px 20px; 
-            font-weight: bold; border-radius: 5px; z-index: 3000; cursor: pointer; 
-            display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border: 2px solid white;
-            white-space: nowrap;
+        #replay-banner { position: absolute; top: -45px; left: 50%; transform: translateX(-50%); background: rgba(255, 0, 0, 0.9); color: white; padding: 8px 15px; font-weight: bold; border-radius: 5px; z-index: 3000; cursor: pointer; display: none; border: 2px solid white; white-space: nowrap; font-size: 12px; }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 1100px) {
+            .main-container { flex-direction: column; align-items: center; margin-top: 100px; }
+            .side-panel-wrapper { width: 90%; max-width: 400px; order: 2; }
+            .game-column { order: 1; width: 100%; }
+            .menu { position: fixed; top: 0; left: 0; width: 100%; background: #c0c0c0; padding: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); justify-content: center; }
+            #result-banner { margin-top: 20px; }
         }
-        #replay-banner:hover { background: rgba(200, 0, 0, 1); }
     </style>
 </head>
 <body>
@@ -346,7 +221,7 @@
         <div class="donate-btn" title="Support via Toss" onclick="showQr('toss')">
             <img src="./source/toss-qr.png" alt="Toss">
         </div>
-        <a href="https://ko-fi.com/yeopbuddy" target="_blank" class="donate-btn" title="Buy me a coffee (Ko-fi)" oncontextmenu="event.preventDefault(); showQr('kofi');">
+        <a href="https://ko-fi.com/yeopbuddy" target="_blank" class="donate-btn" title="Buy me a coffee (Ko-fi)">
             <img src="./source/kofi-qr.png" alt="Ko-fi">
         </a>
     </div>
@@ -356,7 +231,6 @@
             <button class="close-btn" onclick="closeModal()">×</button>
             <div style="font-weight: bold; font-size: 16px;">NEW TOP 10 RECORD!</div>
             <div id="record-type-label" style="font-size: 10px; color: #444; margin-top: 4px; margin-bottom: 15px;">(Physical Mode)</div>
-            
             <select id="player-country">
                 <option value="kr">🇰🇷 South Korea</option>
                 <option value="us">🇺🇸 United States</option>
@@ -375,7 +249,6 @@
                 <option value="un">🌍 Other</option>
             </select>
             <input type="text" id="player-name" maxlength="15" placeholder="Enter Your ID">
-            
             <button class="submit-btn" onclick="submitRanking()">SUBMIT</button>
         </div>
     </div>
@@ -384,9 +257,8 @@
         <button onclick="initGame('beginner')">Beginner</button>
         <button onclick="initGame('intermediate')">Intermediate</button>
         <button onclick="initGame('expert')">Expert</button>
-        <span style="margin-left: 20px; border-left: 1px solid #808080; padding-left: 10px;"></span>
-        <button id="btn-start-solver" onclick="startSolver()" style="background: #e1e1e1;">Start Solver</button>
-        <button id="btn-stop-solver" onclick="stopSolver()" disabled>Stop Solver</button>
+        <button id="btn-start-solver" onclick="startSolver()" style="background: #e1e1e1;">Solver</button>
+        <button id="btn-stop-solver" onclick="stopSolver()" disabled>Stop</button>
         <button id="btn-hint" onclick="toggleHint()" style="background: #e1e1e1;">Hint: OFF</button>
     </div>
 
@@ -415,26 +287,28 @@
             </div>
         </div>
 
-        <!-- Center: Game Board Wrapper -->
+        <!-- Center -->
         <div class="game-column">
             <div id="replay-banner" onclick="stopReplay()">🔴 WATCHING REPLAY - CLICK TO STOP</div>
-            <div class="game-outer-frame">
-                <div class="inset-frame stats-bar">
-                    <div class="lcd-container">
-                        <div class="lcd-bg">888</div>
-                        <div id="mine-count" class="digit-display">010</div>
+            <div class="board-scroll-wrapper">
+                <div class="game-outer-frame">
+                    <div class="inset-frame stats-bar">
+                        <div class="lcd-container">
+                            <div class="lcd-bg">888</div>
+                            <div id="mine-count" class="digit-display">010</div>
+                        </div>
+                        <div id="smiley"></div>
+                        <div class="lcd-container">
+                            <div class="lcd-bg">888</div>
+                            <div id="timer" class="digit-display">000</div>
+                        </div>
                     </div>
-                    <div id="smiley"></div>
-                    <div class="lcd-container">
-                        <div class="lcd-bg">888</div>
-                        <div id="timer" class="digit-display">000</div>
-                    </div>
+                    <div id="board"></div>
                 </div>
-                <div id="board"></div>
             </div>
         </div>
 
-        <!-- Right Side: Stats Panel -->
+        <!-- Right Side -->
         <div class="side-panel-wrapper">
             <div id="stats-panel-frame" class="game-outer-frame">
                 <div class="inset-frame stats-panel">
@@ -481,35 +355,22 @@
             wrong: `<svg viewBox="0 0 24 24"><path d="M6 20h12M12 20V4M12 4L6 8l6 4" fill="#ff0000" stroke="#000" stroke-width="1.5"/><path d="M4 4l16 16M20 4L4 20" stroke="#ff0000" stroke-width="2"/></svg>`
         };
 
-        const COUNTRY_FLAGS = {
-            kr: "kr", us: "us", jp: "jp", cn: "cn", gb: "gb",
-            de: "de", fr: "fr", ca: "ca", au: "au", br: "br",
-            es: "es", it: "it", ru: "ru", in: "in", un: "un"
-        };
-
-        const CONFIG = {
-            beginner: { rows: 9, cols: 9, mines: 10 },
-            intermediate: { rows: 16, cols: 16, mines: 40 },
-            expert: { rows: 16, cols: 30, mines: 99 }
-        };
+        const COUNTRY_FLAGS = { kr: "kr", us: "us", jp: "jp", cn: "cn", gb: "gb", de: "de", fr: "fr", ca: "ca", au: "au", br: "br", es: "es", it: "it", ru: "ru", in: "in", un: "un" };
+        const CONFIG = { beginner: { rows: 9, cols: 9, mines: 10 }, intermediate: { rows: 16, cols: 16, mines: 40 }, expert: { rows: 16, cols: 30, mines: 99 } };
 
         let currentDifficulty = 'beginner';
         let board = [], revealedCount = 0, flaggedCount = 0, isGameOver = false, isFirstClick = true;
         let timerRequest = null, startTime = 0, total3BV = 0, clicks = 0;
-        let solverInterval = null;
-        let isHintActive = false;
-        
+        let solverInterval = null, isHintActive = false;
         let wasSolverUsed = false, wasHintUsed = false;
         let gameLog = [], mineLocations = [], clickTimes = [], untrustedClicks = 0;
         let replayMode = false, replayTimeouts = [], currentReplayData = null;
-        
         let currentRankDifficulty = 'beginner', currentRankCategory = 'solver';
-        let lastFinalTime = 0;
-        let loadedRecords = {};
+        let lastFinalTime = 0, loadedRecords = {};
 
         function fireConfetti() {
             const count = 200;
-            const defaults = { origin: { y: 0.7 }, zIndex: 3000 };
+            const defaults = { origin: { y: 0.7 }, zIndex: 7000 };
             function fire(particleRatio, opts) { confetti({ ...defaults, ...opts, particleCount: Math.floor(count * particleRatio) }); }
             fire(0.25, { spread: 26, startVelocity: 55 });
             fire(0.2, { spread: 60 });
@@ -530,10 +391,7 @@
 
         function recordAction(type, r, c, e) {
             if (replayMode) return;
-            if (e) {
-                if (!e.isTrusted && !wasSolverUsed) untrustedClicks++;
-                clickTimes.push(performance.now());
-            }
+            if (e) { if (!e.isTrusted && !wasSolverUsed) untrustedClicks++; clickTimes.push(performance.now()); }
             let t = startTime === 0 ? 0 : performance.now() - startTime;
             gameLog.push({ t: Math.floor(t), type, r, c });
         }
@@ -546,7 +404,6 @@
             title.textContent = type === 'toss' ? 'Support via Toss' : 'Support via Ko-fi';
             modal.style.display = 'flex';
         }
-
         function closeQrModal() { document.getElementById('qr-modal').style.display = 'none'; }
 
         async function loadRankings() {
@@ -560,57 +417,32 @@
                 rankListEl.innerHTML = ''; loadedRecords = {};
                 let i = 1;
                 querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    loadedRecords[doc.id] = data;
+                    const data = doc.data(); loadedRecords[doc.id] = data;
                     const countryCode = data.country || "un";
                     const item = document.createElement('div');
                     item.className = 'rank-item';
-                    item.innerHTML = `
-                        <span class="rank-no">${i++}</span>
-                        <span class="rank-name"><span class="fi fi-${countryCode} rank-flag"></span> ${data.name}</span>
-                        <span class="rank-time">${data.time.toFixed(3)}s</span>
-                        ${data.log ? `<span class="rank-replay" onclick="playReplay('${doc.id}')" title="Watch Replay">▶️</span>` : ''}
-                    `;
+                    item.innerHTML = `<span class="rank-no">${i++}</span><span class="rank-name"><span class="fi fi-${countryCode} rank-flag"></span> ${data.name}</span><span class="rank-time">${data.time.toFixed(3)}s</span>${data.log ? `<span class="rank-replay" onclick="playReplay('${doc.id}')">▶️</span>` : ''}`;
                     rankListEl.appendChild(item);
                 });
                 if (i === 1) rankListEl.innerHTML = '<div style="padding:10px; font-size:10px; color:#808080;">No records yet</div>';
-            } catch (e) { rankListEl.innerHTML = '<div style="padding:10px; font-size:10px; color:#ff0000;">Error loading</div>'; }
+            } catch (e) { rankListEl.innerHTML = '<div style="padding:10px; font-size:10px; color:#ff0000;">Error</div>'; }
         }
 
-        function switchRankTab(difficulty) {
-            if (replayMode) return;
-            currentRankDifficulty = difficulty;
-            document.querySelectorAll('.rank-tab').forEach(t => t.classList.remove('active'));
-            const tab = document.getElementById(`tab-${difficulty}`);
-            if (tab) tab.classList.add('active');
-            loadRankings();
-        }
-
-        function switchCategory(category) {
-            if (replayMode) return;
-            currentRankCategory = category;
-            document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
-            const catTab = document.getElementById(`cat-${category}`);
-            if (catTab) catTab.classList.add('active');
-            loadRankings();
-        }
+        function switchRankTab(difficulty) { if (replayMode) return; currentRankDifficulty = difficulty; document.querySelectorAll('.rank-tab').forEach(t => t.classList.remove('active')); document.getElementById(`tab-${difficulty}`).classList.add('active'); loadRankings(); }
+        function switchCategory(category) { if (replayMode) return; currentRankCategory = category; document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active')); document.getElementById(`cat-${category}`).classList.add('active'); loadRankings(); }
 
         async function checkRanking(time, difficulty) {
             if (!window.db || !window.dbUtils || replayMode) return;
             let category = "physical";
             if (wasSolverUsed || untrustedClicks > 0 || isBotRhythm(clickTimes)) category = "solver";
             else if (wasHintUsed) category = "hint";
-
             const { query, collection, where, orderBy, limit, getDocs } = window.dbUtils;
             const q = query(collection(window.db, "rankings"), where("difficulty", "==", difficulty), where("category", "==", category), orderBy("time", "asc"), limit(10));
             const snapshot = await getDocs(q);
             const docs = snapshot.docs;
             if (docs.length < 10 || time < docs[docs.length - 1].data().time) {
-                lastFinalTime = time;
-                document.getElementById('record-type-label').textContent = `(${category.toUpperCase()} Mode)`;
-                fireConfetti();
-                document.getElementById('name-modal').style.display = 'flex';
-                document.getElementById('player-name').focus();
+                lastFinalTime = time; document.getElementById('record-type-label').textContent = `(${category.toUpperCase()} Mode)`;
+                fireConfetti(); document.getElementById('name-modal').style.display = 'flex'; document.getElementById('player-name').focus();
             }
         }
 
@@ -621,27 +453,19 @@
             let category = "physical";
             if (wasSolverUsed || untrustedClicks > 0 || isBotRhythm(clickTimes)) category = "solver";
             else if (wasHintUsed) category = "hint";
-
             closeModal();
             try {
-                await window.dbUtils.addDoc(window.dbUtils.collection(window.db, "rankings"), {
-                    name: name, country: country, time: lastFinalTime, difficulty: currentDifficulty, category: category, timestamp: new Date(),
-                    mines: mineLocations, log: gameLog
-                });
-                currentRankCategory = category; currentRankDifficulty = currentDifficulty;
-                updateRankUI(); loadRankings();
+                await window.dbUtils.addDoc(window.dbUtils.collection(window.db, "rankings"), { name, country, time: lastFinalTime, difficulty: currentDifficulty, category, timestamp: new Date(), mines: mineLocations, log: gameLog });
+                currentRankCategory = category; currentRankDifficulty = currentDifficulty; updateRankUI(); loadRankings();
             } catch (e) { console.error(e); }
         }
 
         function closeModal() { document.getElementById('name-modal').style.display = 'none'; document.getElementById('player-name').value = ''; }
-        
         function updateRankUI() {
             document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
-            const catTab = document.getElementById(`cat-${currentRankCategory}`);
-            if (catTab) catTab.classList.add('active');
+            const catTab = document.getElementById(`cat-${currentRankCategory}`); if (catTab) catTab.classList.add('active');
             document.querySelectorAll('.rank-tab').forEach(t => t.classList.remove('active'));
-            const diffTab = document.getElementById(`tab-${currentRankDifficulty}`);
-            if (diffTab) diffTab.classList.add('active');
+            const diffTab = document.getElementById(`tab-${currentRankDifficulty}`); if (diffTab) diffTab.classList.add('active');
         }
 
         function setSmiley(type) { document.getElementById('smiley').innerHTML = ICONS[type]; }
@@ -657,22 +481,15 @@
         }
 
         function calculateSafety(r, c) {
-            const cell = board[r][c];
-            if (cell.isRevealed || cell.isFlagged) return null;
-            const moves = findSolverMoves();
-            if (moves.toReveal.some(m => m.r === r && m.c === c)) return 100.0;
-            if (moves.toFlag.some(m => m.r === r && m.c === c)) return 0.0;
+            const cell = board[r][c]; if (cell.isRevealed || cell.isFlagged) return null;
+            const moves = findSolverMoves(); if (moves.toReveal.some(m => m.r === r && m.c === c)) return 100.0; if (moves.toFlag.some(m => m.r === r && m.c === c)) return 0.0;
             let minRisk = 1.0; let foundConstraint = false;
             getNeighbors(r, c).forEach(n => {
                 if (n.isRevealed && n.neighborCount > 0) {
                     const nbNeighbors = getNeighbors(n.r, n.c);
                     const closed = nbNeighbors.filter(nn => !nn.isRevealed && !nn.isFlagged);
-                    const flags = nbNeighbors.filter(nn => nn.isFlagged).length;
-                    const remaining = n.neighborCount - flags;
-                    if (closed.length > 0) {
-                        const risk = remaining / closed.length;
-                        if (risk < minRisk) minRisk = risk; foundConstraint = true;
-                    }
+                    const rem = n.neighborCount - nbNeighbors.filter(nn => nn.isFlagged).length;
+                    if (closed.length > 0) { const risk = rem / closed.length; if (risk < minRisk) minRisk = risk; foundConstraint = true; }
                 }
             });
             if (!foundConstraint) {
@@ -686,23 +503,16 @@
 
         function showHint(r, c, e) {
             if (!isHintActive || isGameOver || replayMode) return;
-            const safety = calculateSafety(r, c);
-            if (safety === null) return;
+            const safety = calculateSafety(r, c); if (safety === null) return;
             const overlay = document.getElementById('hint-overlay');
-            overlay.textContent = `${safety.toFixed(1)}% Safe`;
-            overlay.style.display = 'block';
-            overlay.style.left = `${e.clientX + 10}px`;
-            overlay.style.top = `${e.clientY + 10}px`;
+            overlay.textContent = `${safety.toFixed(1)}% Safe`; overlay.style.display = 'block'; overlay.style.left = `${e.clientX + 10}px`; overlay.style.top = `${e.clientY + 10}px`;
         }
         function hideHint() { document.getElementById('hint-overlay').style.display = 'none'; }
 
         window.playReplay = function(docId) {
-            let record = loadedRecords[docId];
-            if (!record || !record.log) return alert("Replay data not available.");
-            stopSolver(); stopReplay();
-            initGame(record.difficulty);
-            replayMode = true; currentReplayData = record;
-            document.getElementById('replay-banner').style.display = 'block';
+            let record = loadedRecords[docId]; if (!record || !record.log) return alert("No replay.");
+            stopSolver(); stopReplay(); initGame(record.difficulty);
+            replayMode = true; currentReplayData = record; document.getElementById('replay-banner').style.display = 'block';
             document.querySelectorAll('#main-menu button, #lboard-cats button, #lboard-diffs button').forEach(b => b.disabled = true);
             record.log.forEach(action => {
                 replayTimeouts.push(setTimeout(() => {
@@ -716,8 +526,7 @@
         function stopReplay() {
             replayTimeouts.forEach(clearTimeout); replayTimeouts = [];
             if (replayMode) {
-                replayMode = false; currentReplayData = null;
-                document.getElementById('replay-banner').style.display = 'none';
+                replayMode = false; currentReplayData = null; document.getElementById('replay-banner').style.display = 'none';
                 document.querySelectorAll('#main-menu button, #lboard-cats button, #lboard-diffs button').forEach(b => b.disabled = false);
                 initGame(currentDifficulty);
             }
@@ -726,121 +535,77 @@
         function initGame(difficulty) {
             if (difficulty) currentDifficulty = difficulty;
             const { rows, cols, mines } = CONFIG[currentDifficulty];
-            stopSolver();
-            if (!replayMode) { replayTimeouts.forEach(clearTimeout); replayTimeouts = []; document.getElementById('replay-banner').style.display = 'none'; }
-            cancelAnimationFrame(timerRequest);
-            timerRequest = null; startTime = 0; clicks = 0; total3BV = 0;
+            stopSolver(); if (!replayMode) { replayTimeouts.forEach(clearTimeout); replayTimeouts = []; document.getElementById('replay-banner').style.display = 'none'; }
+            cancelAnimationFrame(timerRequest); timerRequest = null; startTime = 0; clicks = 0; total3BV = 0;
             isGameOver = false; isFirstClick = true; revealedCount = 0; flaggedCount = 0;
             if (!replayMode) { wasSolverUsed = false; wasHintUsed = false; gameLog = []; mineLocations = []; clickTimes = []; untrustedClicks = 0; }
-            document.getElementById('result-banner').textContent = '';
-            document.getElementById('stats-panel-frame').style.visibility = 'hidden';
-            document.getElementById('timer').textContent = '000';
-            updateUI(); setSmiley('smile');
-            if (!replayMode) { updateRankUI(); loadRankings(); }
-            const boardEl = document.getElementById('board');
-            boardEl.style.gridTemplateColumns = `repeat(${cols}, 24px)`;
-            boardEl.innerHTML = ''; board = [];
+            document.getElementById('result-banner').textContent = ''; document.getElementById('stats-panel-frame').style.visibility = 'hidden'; document.getElementById('timer').textContent = '000';
+            updateUI(); setSmiley('smile'); if (!replayMode) { updateRankUI(); loadRankings(); }
+            const boardEl = document.getElementById('board'); boardEl.style.gridTemplateColumns = `repeat(${cols}, 24px)`; boardEl.innerHTML = ''; board = [];
             for (let r = 0; r < rows; r++) {
                 board[r] = [];
                 for (let c = 0; c < cols; c++) {
-                    const cellEl = document.createElement('div');
-                    cellEl.classList.add('cell', 'hd_closed');
-                    cellEl.id = `cell_${c}_${r}`;
+                    const cellEl = document.createElement('div'); cellEl.classList.add('cell', 'hd_closed'); cellEl.id = `cell_${c}_${r}`;
                     cellEl.addEventListener('mousedown', (e) => {
                         if (isGameOver || replayMode) return;
-                        if (e.button === 0) {
-                            setSmiley('worried');
-                            if (board[r][c].isRevealed && board[r][c].neighborCount > 0) {
-                                getNeighbors(r, c).forEach(n => {
-                                    if (!n.isRevealed && !n.isFlagged) { n.el.classList.remove('hd_closed'); n.el.classList.add('hd_active'); }
-                                });
-                            }
-                        }
+                        if (e.button === 0) { setSmiley('worried'); if (board[r][c].isRevealed && board[r][c].neighborCount > 0) { getNeighbors(r, c).forEach(n => { if (!n.isRevealed && !n.isFlagged) { n.el.classList.remove('hd_closed'); n.el.classList.add('hd_active'); } }); } }
                     });
                     cellEl.addEventListener('click', (e) => { if (!isGameOver && !replayMode) board[r][c].isRevealed ? handleChording(r, c, e) : handleReveal(r, c, e); });
                     cellEl.addEventListener('contextmenu', (e) => { e.preventDefault(); if (!isGameOver && !replayMode) handleFlag(r, c, e); });
-                    cellEl.addEventListener('mouseenter', (e) => showHint(r, c, e));
-                    cellEl.addEventListener('mouseleave', hideHint);
-                    boardEl.appendChild(cellEl);
-                    board[r][c] = { r, c, isMine: false, isRevealed: false, isFlagged: false, neighborCount: 0, el: cellEl };
+                    cellEl.addEventListener('mouseenter', (e) => showHint(r, c, e)); cellEl.addEventListener('mouseleave', hideHint);
+                    boardEl.appendChild(cellEl); board[r][c] = { r, c, isMine: false, isRevealed: false, isFlagged: false, neighborCount: 0, el: cellEl };
                 }
             }
         }
 
         function getNeighbors(r, c) {
             const neighbors = []; const { rows, cols } = CONFIG[currentDifficulty];
-            for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-                if (dr === 0 && dc === 0) continue;
-                const nr = r + dr, nc = c + dc;
-                if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) neighbors.push(board[nr][nc]);
-            }
+            for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) { if (dr || dc) { const nr = r + dr, nc = c + dc; if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) neighbors.push(board[nr][nc]); } }
             return neighbors;
         }
 
         function handleReveal(r, c, e = null) {
             if (isGameOver || board[r][c].isFlagged || board[r][c].isRevealed) return;
             recordAction('reveal', r, c, e);
-            if (isFirstClick) { 
-                isFirstClick = false; 
-                generateMines(r, c, replayMode ? currentReplayData.mines : null); startTime = performance.now(); startTimer(); 
-            }
-            clicks++;
-            if (board[r][c].isMine) { board[r][c].el.classList.add('mine-hit'); gameOver(false); return; }
-            revealCell(r, c);
-            const { rows, cols, mines } = CONFIG[currentDifficulty];
-            if (revealedCount === (rows * cols) - mines) gameOver(true);
+            if (isFirstClick) { isFirstClick = false; generateMines(r, c, replayMode ? currentReplayData.mines : null); startTime = performance.now(); startTimer(); }
+            clicks++; if (board[r][c].isMine) { board[r][c].el.classList.add('mine-hit'); gameOver(false); return; }
+            revealCell(r, c); const { rows, cols, mines } = CONFIG[currentDifficulty]; if (revealedCount === (rows * cols) - mines) gameOver(true);
         }
 
         function handleChording(r, c, e = null) {
-            const cell = board[r][c];
-            if (!cell.isRevealed || cell.neighborCount === 0) return;
-            recordAction('chord', r, c, e);
-            const neighbors = getNeighbors(r, c);
+            const cell = board[r][c]; if (!cell.isRevealed || cell.neighborCount === 0) return;
+            recordAction('chord', r, c, e); const neighbors = getNeighbors(r, c);
             if (neighbors.filter(n => n.isFlagged).length === cell.neighborCount) {
-                let anyUnrevealed = false;
-                neighbors.forEach(n => { if (!n.isRevealed && !n.isFlagged) anyUnrevealed = true; });
-                if (anyUnrevealed) clicks++;
-                neighbors.forEach(n => { if (!n.isRevealed && !n.isFlagged) handleReveal(n.r, n.c); });
+                let any = false; neighbors.forEach(n => { if (!n.isRevealed && !n.isFlagged) any = true; });
+                if (any) clicks++; neighbors.forEach(n => { if (!n.isRevealed && !n.isFlagged) handleReveal(n.r, n.c); });
             }
         }
 
         function revealCell(r, c) {
-            const cell = board[r][c];
-            if (cell.isRevealed || cell.isFlagged) return;
-            cell.isRevealed = true; revealedCount++;
-            cell.el.classList.remove('hd_closed');
-            cell.el.classList.add('hd_opened');
+            const cell = board[r][c]; if (cell.isRevealed || cell.isFlagged) return;
+            cell.isRevealed = true; revealedCount++; cell.el.classList.remove('hd_closed'); cell.el.classList.add('hd_opened');
             if (cell.neighborCount > 0) { cell.el.textContent = cell.neighborCount; cell.el.classList.add(`hd_type${cell.neighborCount}`); }
             else { getNeighbors(r, c).forEach(n => revealCell(n.r, n.c)); }
         }
 
         function handleFlag(r, c, e = null) {
             if (isGameOver || board[r][c].isRevealed) return;
-            recordAction('flag', r, c, e);
-            const cell = board[r][c];
-            cell.isFlagged = !cell.isFlagged;
+            recordAction('flag', r, c, e); const cell = board[r][c]; cell.isFlagged = !cell.isFlagged;
             if (cell.isFlagged) { cell.el.classList.add('hd_flag'); cell.el.innerHTML = ICONS.flag; flaggedCount++; }
             else { cell.el.classList.remove('hd_flag'); cell.el.innerHTML = ''; flaggedCount--; }
             updateUI();
         }
 
-        function startTimer() {
-            if (isGameOver) return;
-            const elapsed = (performance.now() - startTime) / 1000;
-            document.getElementById('timer').textContent = Math.floor(elapsed).toString().padStart(3, '0');
-            timerRequest = requestAnimationFrame(startTimer);
-        }
+        function startTimer() { if (isGameOver) return; const elapsed = (performance.now() - startTime) / 1000; document.getElementById('timer').textContent = Math.floor(elapsed).toString().padStart(3, '0'); timerRequest = requestAnimationFrame(startTimer); }
 
         function generateMines(excludeR, excludeC, replayMines = null) {
             const { rows, cols, mines } = CONFIG[currentDifficulty];
-            if (replayMines && replayMines.length > 0) {
-                replayMines.forEach(m => board[m.r][m.c].isMine = true);
-            } else {
+            if (replayMines) { replayMines.forEach(m => board[m.r][m.c].isMine = true); }
+            else {
                 let placed = 0; mineLocations = [];
                 while (placed < mines) {
                     const r = Math.floor(Math.random() * rows), c = Math.floor(Math.random() * cols);
-                    const isNearFirst = Math.abs(r - excludeR) <= 1 && Math.abs(c - excludeC) <= 1;
-                    if (!board[r][c].isMine && !isNearFirst) { board[r][c].isMine = true; mineLocations.push({r, c}); placed++; }
+                    if (!board[r][c].isMine && (Math.abs(r - excludeR) > 1 || Math.abs(c - excludeC) > 1)) { board[r][c].isMine = true; mineLocations.push({r, c}); placed++; }
                 }
             }
             for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (!board[r][c].isMine) board[r][c].neighborCount = getNeighbors(r, c).filter(n => n.isMine).length;
@@ -848,12 +613,8 @@
         }
 
         function calculate3BV() {
-            let count = 0; const { rows, cols } = CONFIG[currentDifficulty];
-            const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
-            const flood = (r, c) => {
-                if (visited[r][c]) return; visited[r][c] = true;
-                if (board[r][c].neighborCount === 0) getNeighbors(r, c).forEach(n => flood(n.r, n.c));
-            };
+            let count = 0; const { rows, cols } = CONFIG[currentDifficulty]; const visited = Array.from({ length: rows }, () => Array(cols).fill(false));
+            const flood = (r, c) => { if (visited[r][c]) return; visited[r][c] = true; if (board[r][c].neighborCount === 0) getNeighbors(r, c).forEach(n => flood(n.r, n.c)); };
             for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (!board[r][c].isMine && board[r][c].neighborCount === 0 && !visited[r][c]) { count++; flood(r, c); }
             for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (!board[r][c].isMine && !visited[r][c]) count++;
             return count;
@@ -861,36 +622,25 @@
 
         function calculateSolved3BV() {
             let solved = 0; const visited = Array.from({ length: board.length }, () => Array(board[0].length).fill(false));
-            const flood = (r, c) => {
-                if (visited[r][c]) return; visited[r][c] = true;
-                if (board[r][c].neighborCount === 0) getNeighbors(r, c).forEach(n => flood(n.r, n.c));
-            };
+            const flood = (r, c) => { if (visited[r][c]) return; visited[r][c] = true; if (board[r][c].neighborCount === 0) getNeighbors(r, c).forEach(n => flood(n.r, n.c)); };
             for (let r = 0; r < board.length; r++) for (let c = 0; c < board[0].length; c++) if (board[r][c].isRevealed && board[r][c].neighborCount === 0 && !visited[r][c]) { solved++; flood(r, c); }
             for (let r = 0; r < board.length; r++) for (let c = 0; c < board[0].length; c++) if (board[r][c].isRevealed && !visited[r][c]) solved++;
             return solved;
         }
 
-        function updateUI() {
-            const { mines } = CONFIG[currentDifficulty];
-            document.getElementById('mine-count').textContent = Math.max(-99, mines - flaggedCount).toString().padStart(3, '0');
-        }
+        function updateUI() { const { mines } = CONFIG[currentDifficulty]; document.getElementById('mine-count').textContent = Math.max(-99, mines - flaggedCount).toString().padStart(3, '0'); }
 
         function gameOver(isWin) {
             isGameOver = true; cancelAnimationFrame(timerRequest);
             const finalTime = (performance.now() - startTime) / 1000;
-            for (let r = 0; r < board.length; r++) {
-                for (let c = 0; c < board[0].length; c++) {
-                    const cell = board[r][c];
-                    if (cell.isMine) { if (!cell.isFlagged) { cell.el.classList.remove('hd_closed'); cell.el.classList.add('hd_opened'); cell.el.innerHTML = ICONS.mine; } }
-                    else if (cell.isFlagged) cell.el.innerHTML = ICONS.wrong;
-                }
+            for (let r = 0; r < board.length; r++) for (let c = 0; c < board[0].length; c++) {
+                const cell = board[r][c];
+                if (cell.isMine) { if (!cell.isFlagged) { cell.el.classList.remove('hd_closed'); cell.el.classList.add('hd_opened'); cell.el.innerHTML = ICONS.mine; } }
+                else if (cell.isFlagged) cell.el.innerHTML = ICONS.wrong;
             }
             setSmiley(isWin ? 'cool' : 'dead');
-            const banner = document.getElementById('result-banner');
-            banner.textContent = isWin ? "VICTORY!" : "GAME OVER";
-            banner.style.color = isWin ? "#008000" : "#ff0000";
-            showPostGameStats(finalTime, isWin);
-            if (isWin && !replayMode) checkRanking(finalTime, currentDifficulty);
+            const banner = document.getElementById('result-banner'); banner.textContent = isWin ? "VICTORY!" : "GAME OVER"; banner.style.color = isWin ? "#008000" : "#ff0000";
+            showPostGameStats(finalTime, isWin); if (isWin && !replayMode) checkRanking(finalTime, currentDifficulty);
         }
 
         function showPostGameStats(finalTime, isWin) {
@@ -898,58 +648,39 @@
             document.getElementById('stat-time').textContent = finalTime.toFixed(3) + "s";
             const bvs = finalTime > 0 ? (solved3BV / finalTime).toFixed(3) : "0.000";
             document.getElementById('stat-3bvs').textContent = bvs;
-            const est = bvs > 0 ? (total3BV / bvs).toFixed(3) : "0.000";
-            document.getElementById('stat-est').textContent = isWin ? finalTime.toFixed(3) + "s" : est + "s";
+            document.getElementById('stat-est').textContent = isWin ? finalTime.toFixed(3) + "s" : (bvs > 0 ? (total3BV / bvs).toFixed(3) : "0.000") + "s";
             document.getElementById('stat-3bv').textContent = solved3BV + " / " + total3BV;
             document.getElementById('stat-clicks').textContent = clicks;
-            const eff = clicks > 0 ? ((solved3BV / clicks) * 100).toFixed(3) : "0.000";
-            document.getElementById('stat-eff').textContent = eff + "%";
+            document.getElementById('stat-eff').textContent = (clicks > 0 ? ((solved3BV / clicks) * 100).toFixed(3) : "0.000") + "%";
             document.getElementById('stats-panel-frame').style.visibility = 'visible';
         }
 
         function getVirtualState() { return board.map(row => row.map(cell => ({ isRevealed: cell.isRevealed, isFlagged: cell.isFlagged, neighborCount: cell.neighborCount, r: cell.r, c: cell.c }))); }
 
         function checkContradiction(r, c, assumeMine) {
-            const vBoard = getVirtualState(); const target = vBoard[r][c];
-            if (assumeMine) target.isFlagged = true; else target.isRevealed = true;
+            const vBoard = getVirtualState(); const target = vBoard[r][c]; if (assumeMine) target.isFlagged = true; else target.isRevealed = true;
             let changed = true;
             while (changed) {
                 changed = false;
-                for (let y = 0; y < vBoard.length; y++) {
-                    for (let x = 0; x < vBoard[0].length; x++) {
-                        const cell = vBoard[y][x];
-                        if (cell.isRevealed && cell.neighborCount > 0) {
-                            const neighbors = [];
-                            for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (dy || dx) { const ny = y + dy, nx = x + dx; if (ny >= 0 && ny < vBoard.length && nx >= 0 && nx < vBoard[0].length) neighbors.push(vBoard[ny][nx]); } }
-                            const closed = neighbors.filter(n => !n.isRevealed && !n.isFlagged);
-                            const rem = cell.neighborCount - neighbors.filter(n => n.isFlagged).length;
-                            if (rem < 0 || rem > closed.length) return true;
-                            if (rem === 0 && closed.length > 0) { closed.forEach(n => { if (!n.isRevealed) { n.isRevealed = true; changed = true; } }); }
-                            else if (rem === closed.length && closed.length > 0) { closed.forEach(n => { if (!n.isFlagged) { n.isFlagged = true; changed = true; } }); }
-                        }
+                for (let y = 0; y < vBoard.length; y++) for (let x = 0; x < vBoard[0].length; x++) {
+                    const cell = vBoard[y][x];
+                    if (cell.isRevealed && cell.neighborCount > 0) {
+                        const neighbors = [];
+                        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { if (dy || dx) { const ny = y + dy, nx = x + dx; if (ny >= 0 && ny < vBoard.length && nx >= 0 && nx < vBoard[0].length) neighbors.push(vBoard[ny][nx]); } }
+                        const closed = neighbors.filter(n => !n.isRevealed && !n.isFlagged);
+                        const rem = cell.neighborCount - neighbors.filter(n => n.isFlagged).length;
+                        if (rem < 0 || rem > closed.length) return true;
+                        if (rem === 0 && closed.length > 0) { closed.forEach(n => { if (!n.isRevealed) { n.isRevealed = true; changed = true; } }); }
+                        else if (rem === closed.length && closed.length > 0) { closed.forEach(n => { if (!n.isFlagged) { n.isFlagged = true; changed = true; } }); }
                     }
                 }
             }
             return false;
         }
 
-        function startSolver() {
-            if (isGameOver || replayMode) return;
-            wasSolverUsed = true; document.getElementById('btn-start-solver').disabled = true; document.getElementById('btn-stop-solver').disabled = false;
-            if (isFirstClick) handleReveal(0, 0);
-            solverInterval = setInterval(solverStep, 50);
-        }
-
+        function startSolver() { if (isGameOver || replayMode) return; wasSolverUsed = true; document.getElementById('btn-start-solver').disabled = true; document.getElementById('btn-stop-solver').disabled = false; if (isFirstClick) handleReveal(0, 0); solverInterval = setInterval(solverStep, 50); }
         function stopSolver() { if (solverInterval) { clearInterval(solverInterval); solverInterval = null; } document.getElementById('btn-start-solver').disabled = false; document.getElementById('btn-stop-solver').disabled = true; }
-
-        function solverStep() {
-            if (isGameOver) { stopSolver(); return; }
-            const moves = findSolverMoves();
-            if (moves.toFlag.length > 0) { handleFlag(moves.toFlag[0].r, moves.toFlag[0].c); return; }
-            if (moves.toReveal.length > 0) { handleReveal(moves.toReveal[0].r, moves.toReveal[0].c); return; }
-            const guess = findSolverGuess();
-            if (guess) handleReveal(guess.r, guess.c); else stopSolver();
-        }
+        function solverStep() { if (isGameOver) { stopSolver(); return; } const moves = findSolverMoves(); if (moves.toFlag.length > 0) { handleFlag(moves.toFlag[0].r, moves.toFlag[0].c); return; } if (moves.toReveal.length > 0) { handleReveal(moves.toReveal[0].r, moves.toReveal[0].c); return; } const guess = findSolverGuess(); if (guess) handleReveal(guess.r, guess.c); else stopSolver(); }
 
         function findSolverMoves() {
             let toReveal = [], toFlag = []; const vBoard = getVirtualState(); const numCells = [];
@@ -980,10 +711,7 @@
             if (toReveal.length > 0 || toFlag.length > 0) return { toReveal, toFlag };
             const frontier = [];
             for (let r = 0; r < board.length; r++) for (let c = 0; c < board[0].length; c++) if (!board[r][c].isRevealed && !board[r][c].isFlagged && getNeighbors(r, c).some(n => n.isRevealed)) frontier.push({r, c});
-            for (let cell of frontier) {
-                if (checkContradiction(cell.r, cell.c, true)) { toReveal.push(cell); return { toReveal, toFlag }; }
-                if (checkContradiction(cell.r, cell.c, false)) { toFlag.push(cell); return { toReveal, toFlag }; }
-            }
+            for (let cell of frontier) { if (checkContradiction(cell.r, cell.c, true)) { toReveal.push(cell); return { toReveal, toFlag }; } if (checkContradiction(cell.r, cell.c, false)) { toFlag.push(cell); return { toReveal, toFlag }; } }
             return { toReveal, toFlag };
         }
 
