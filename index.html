@@ -535,6 +535,11 @@
         }
 
         async function submitRanking() {
+            if (!gameLog || gameLog.length === 0) {
+                alert("Invalid game: No actions recorded.");
+                closeModal();
+                return;
+            }
             const name = document.getElementById('player-name').value.trim() || "Anonymous";
             const country = document.getElementById('player-country').value;
             if (!window.dbUtils) return;
