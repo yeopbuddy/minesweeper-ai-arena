@@ -47,6 +47,59 @@
             flex-shrink: 0;
         }
 
+        /* Donation Section */
+        .donation-container {
+            position: fixed;
+            top: 10px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+            z-index: 4000;
+        }
+
+        .donate-btn {
+            width: 45px;
+            height: 45px;
+            background: #ffffff;
+            border: 2px solid #808080;
+            border-radius: 8px;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .donate-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .donate-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* QR Overlay Modal */
+        #qr-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: none; z-index: 5000;
+            align-items: center; justify-content: center;
+        }
+        .qr-box {
+            background: white; padding: 20px; border-radius: 12px; position: relative;
+            text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .qr-box img { width: 250px; height: 250px; }
+        .qr-box .close-qr {
+            position: absolute; top: -10px; right: -10px; width: 30px; height: 30px;
+            background: #ff0000; color: white; border-radius: 50%; border: 2px solid white;
+            cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center;
+        }
+
         .leaderboard-frame {
             width: 100%;
             background-color: #c0c0c0;
@@ -280,6 +333,24 @@
 </head>
 <body>
 
+    <div id="qr-modal" onclick="closeQrModal()">
+        <div class="qr-box" onclick="event.stopPropagation()">
+            <button class="close-qr" onclick="closeQrModal()">×</button>
+            <div id="qr-title" style="font-weight: bold; margin-bottom: 10px;">Support the Developer</div>
+            <img id="qr-img" src="" alt="QR Code">
+            <div style="font-size: 12px; margin-top: 10px; color: #666;">Scan to support via Toss / Ko-fi</div>
+        </div>
+    </div>
+
+    <div class="donation-container">
+        <div class="donate-btn" title="Support via Toss" onclick="showQr('toss')">
+            <img src="./source/toss-qr.png" alt="Toss">
+        </div>
+        <a href="https://ko-fi.com/yeopbuddy" target="_blank" class="donate-btn" title="Buy me a coffee (Ko-fi)" oncontextmenu="event.preventDefault(); showQr('kofi');">
+            <img src="./source/kofi-qr.png" alt="Ko-fi">
+        </a>
+    </div>
+
     <div id="name-modal">
         <div class="modal-box">
             <button class="close-btn" onclick="closeModal()">×</button>
@@ -410,6 +481,12 @@
             wrong: `<svg viewBox="0 0 24 24"><path d="M6 20h12M12 20V4M12 4L6 8l6 4" fill="#ff0000" stroke="#000" stroke-width="1.5"/><path d="M4 4l16 16M20 4L4 20" stroke="#ff0000" stroke-width="2"/></svg>`
         };
 
+        const COUNTRY_FLAGS = {
+            kr: "kr", us: "us", jp: "jp", cn: "cn", gb: "gb",
+            de: "de", fr: "fr", ca: "ca", au: "au", br: "br",
+            es: "es", it: "it", ru: "ru", in: "in", un: "un"
+        };
+
         const CONFIG = {
             beginner: { rows: 9, cols: 9, mines: 10 },
             intermediate: { rows: 16, cols: 16, mines: 40 },
@@ -461,6 +538,17 @@
             gameLog.push({ t: Math.floor(t), type, r, c });
         }
 
+        function showQr(type) {
+            const modal = document.getElementById('qr-modal');
+            const img = document.getElementById('qr-img');
+            const title = document.getElementById('qr-title');
+            img.src = `./source/${type}-qr.png`;
+            title.textContent = type === 'toss' ? 'Support via Toss' : 'Support via Ko-fi';
+            modal.style.display = 'flex';
+        }
+
+        function closeQrModal() { document.getElementById('qr-modal').style.display = 'none'; }
+
         async function loadRankings() {
             if (!window.db || !window.dbUtils) return;
             const { query, collection, where, orderBy, limit, getDocs } = window.dbUtils;
@@ -493,7 +581,8 @@
             if (replayMode) return;
             currentRankDifficulty = difficulty;
             document.querySelectorAll('.rank-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(`tab-${difficulty}`).classList.add('active');
+            const tab = document.getElementById(`tab-${difficulty}`);
+            if (tab) tab.classList.add('active');
             loadRankings();
         }
 
@@ -501,7 +590,8 @@
             if (replayMode) return;
             currentRankCategory = category;
             document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(`cat-${category}`).classList.add('active');
+            const catTab = document.getElementById(`cat-${category}`);
+            if (catTab) catTab.classList.add('active');
             loadRankings();
         }
 
@@ -577,9 +667,10 @@
                 if (n.isRevealed && n.neighborCount > 0) {
                     const nbNeighbors = getNeighbors(n.r, n.c);
                     const closed = nbNeighbors.filter(nn => !nn.isRevealed && !nn.isFlagged);
-                    const rem = n.neighborCount - nbNeighbors.filter(nn => nn.isFlagged).length;
+                    const flags = nbNeighbors.filter(nn => nn.isFlagged).length;
+                    const remaining = n.neighborCount - flags;
                     if (closed.length > 0) {
-                        const risk = rem / closed.length;
+                        const risk = remaining / closed.length;
                         if (risk < minRisk) minRisk = risk; foundConstraint = true;
                     }
                 }
@@ -612,10 +703,7 @@
             initGame(record.difficulty);
             replayMode = true; currentReplayData = record;
             document.getElementById('replay-banner').style.display = 'block';
-            
-            // Disable all interactive UI during replay
             document.querySelectorAll('#main-menu button, #lboard-cats button, #lboard-diffs button').forEach(b => b.disabled = true);
-            
             record.log.forEach(action => {
                 replayTimeouts.push(setTimeout(() => {
                     if (action.type === 'reveal') handleReveal(action.r, action.c, null);
@@ -630,7 +718,6 @@
             if (replayMode) {
                 replayMode = false; currentReplayData = null;
                 document.getElementById('replay-banner').style.display = 'none';
-                // Re-enable UI
                 document.querySelectorAll('#main-menu button, #lboard-cats button, #lboard-diffs button').forEach(b => b.disabled = false);
                 initGame(currentDifficulty);
             }
@@ -693,7 +780,10 @@
         function handleReveal(r, c, e = null) {
             if (isGameOver || board[r][c].isFlagged || board[r][c].isRevealed) return;
             recordAction('reveal', r, c, e);
-            if (isFirstClick) { isFirstClick = false; generateMines(r, c, replayMode ? currentReplayData.mines : null); startTime = performance.now(); startTimer(); }
+            if (isFirstClick) { 
+                isFirstClick = false; 
+                generateMines(r, c, replayMode ? currentReplayData.mines : null); startTime = performance.now(); startTimer(); 
+            }
             clicks++;
             if (board[r][c].isMine) { board[r][c].el.classList.add('mine-hit'); gameOver(false); return; }
             revealCell(r, c);
@@ -808,10 +898,12 @@
             document.getElementById('stat-time').textContent = finalTime.toFixed(3) + "s";
             const bvs = finalTime > 0 ? (solved3BV / finalTime).toFixed(3) : "0.000";
             document.getElementById('stat-3bvs').textContent = bvs;
+            const est = bvs > 0 ? (total3BV / bvs).toFixed(3) : "0.000";
             document.getElementById('stat-est').textContent = isWin ? finalTime.toFixed(3) + "s" : est + "s";
             document.getElementById('stat-3bv').textContent = solved3BV + " / " + total3BV;
             document.getElementById('stat-clicks').textContent = clicks;
-            document.getElementById('stat-eff').textContent = (clicks > 0 ? ((solved3BV / clicks) * 100).toFixed(3) : "0.000") + "%";
+            const eff = clicks > 0 ? ((solved3BV / clicks) * 100).toFixed(3) : "0.000";
+            document.getElementById('stat-eff').textContent = eff + "%";
             document.getElementById('stats-panel-frame').style.visibility = 'visible';
         }
 
