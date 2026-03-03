@@ -766,6 +766,7 @@
             replayMode = true; currentReplayData = record;
             replayTotalTime = record.log[record.log.length - 1].t;
             replayCurrentTime = 0; replayLogIndex = 0; isReplayPaused = false;
+            replaySpeed = 1.0; document.getElementById('speed-display').textContent = "1.0x";
             window.lastReplayTimestamp = performance.now();
             
             initGame(record.difficulty);
