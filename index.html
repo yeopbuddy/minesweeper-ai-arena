@@ -669,12 +669,32 @@
                     const cellEl = document.createElement('div'); cellEl.classList.add('cell', 'hd_closed'); cellEl.id = `cell_${c}_${r}`;
                     cellEl.addEventListener('mousedown', (e) => {
                         if (isGameOver || replayMode) return;
-                        if (e.button === 0) { setSmiley('worried'); if (board[r][c].isRevealed && board[r][c].neighborCount > 0) { getNeighbors(r, c).forEach(n => { if (!n.isRevealed && !n.isFlagged) { n.el.classList.remove('hd_closed'); n.el.classList.add('hd_active'); } }); } }
+                        if (e.button === 0) {
+                            setSmiley('worried');
+                            if (board[r][c].isRevealed && board[r][c].neighborCount > 0) {
+                                getNeighbors(r, c).forEach(n => { if (!n.isRevealed && !n.isFlagged) { n.el.classList.remove('hd_closed'); n.el.classList.add('hd_active'); } });
+                            } else if (!board[r][c].isRevealed && !board[r][c].isFlagged) {
+                                cellEl.classList.remove('hd_closed'); cellEl.classList.add('hd_active');
+                            }
+                        }
                         if (e.button === 2) handleFlag(r, c, e);
                     });
                     cellEl.addEventListener('click', (e) => { if (!isGameOver && !replayMode) board[r][c].isRevealed ? handleChording(r, c, e) : handleReveal(r, c, e); });
                     cellEl.addEventListener('contextmenu', (e) => e.preventDefault());
-                    cellEl.addEventListener('mouseenter', (e) => showHint(r, c, e)); cellEl.addEventListener('mouseleave', hideHint);
+                    cellEl.addEventListener('mouseenter', (e) => {
+                        showHint(r, c, e);
+                        if (!isGameOver && !replayMode && e.buttons === 1) {
+                            if (board[r][c].isRevealed && board[r][c].neighborCount > 0) {
+                                getNeighbors(r, c).forEach(n => { if (!n.isRevealed && !n.isFlagged) { n.el.classList.remove('hd_closed'); n.el.classList.add('hd_active'); } });
+                            } else if (!board[r][c].isRevealed && !board[r][c].isFlagged) {
+                                cellEl.classList.remove('hd_closed'); cellEl.classList.add('hd_active');
+                            }
+                        }
+                    });
+                    cellEl.addEventListener('mouseleave', () => {
+                        hideHint();
+                        document.querySelectorAll('.hd_active').forEach(el => { el.classList.add('hd_closed'); el.classList.remove('hd_active'); });
+                    });
                     boardEl.appendChild(cellEl); board[r][c] = { r, c, isMine: false, isRevealed: false, isFlagged: false, neighborCount: 0, el: cellEl };
                 }
             }
