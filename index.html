@@ -782,24 +782,106 @@
         }
 
         function calculateSafety(r, c) {
-            const cell = board[r][c]; if (cell.isRevealed || cell.isFlagged) return null;
-            const moves = findSolverMoves(); if (moves.toReveal.some(m => m.r === r && m.c === c)) return 100.0; if (moves.toFlag.some(m => m.r === r && m.c === c)) return 0.0;
-            let minRisk = 1.0; let foundConstraint = false;
-            getNeighbors(r, c).forEach(n => {
-                if (n.isRevealed && n.neighborCount > 0) {
-                    const nbNeighbors = getNeighbors(n.r, n.c);
-                    const closed = nbNeighbors.filter(nn => !nn.isRevealed && !nn.isFlagged);
-                    const rem = n.neighborCount - nbNeighbors.filter(nn => nn.isFlagged).length;
-                    if (closed.length > 0) { const risk = rem / closed.length; if (risk < minRisk) minRisk = risk; foundConstraint = true; }
-                }
-            });
-            if (!foundConstraint) {
+            const targetCell = board[r][c];
+            if (targetCell.isRevealed || targetCell.isFlagged) return null;
+
+            // 1. Quick check with basic logic
+            const moves = findSolverMoves();
+            if (moves.toReveal.some(m => m.r === r && m.c === c)) return 100.0;
+            if (moves.toFlag.some(m => m.r === r && m.c === c)) return 0.0;
+
+            // 2. Comprehensive Cluster Expansion
+            const islandCells = new Set();
+            const islandNumbers = new Set();
+            const queue = [targetCell];
+            const visited = new Set([`${r},${c}`]);
+
+            // Expand to find all interconnected cells and numbers that affect the outcome
+            while (queue.length > 0 && islandCells.size < 25) {
+                const curr = queue.shift();
+                if (!curr.isRevealed && !curr.isFlagged) islandCells.add(curr);
+
+                getNeighbors(curr.r, curr.c).forEach(n => {
+                    const key = `${n.r},${n.c}`;
+                    if (n.isRevealed && n.neighborCount > 0) {
+                        if (!islandNumbers.has(n)) {
+                            islandNumbers.add(n);
+                            getNeighbors(n.r, n.c).forEach(nn => {
+                                if (!nn.isRevealed && !nn.isFlagged && !visited.has(`${nn.r},${nn.c}`)) {
+                                    visited.add(`${nn.r},${nn.c}`);
+                                    queue.push(nn);
+                                }
+                            });
+                        }
+                    } else if (!n.isRevealed && !n.isFlagged && !visited.has(key)) {
+                        visited.add(key);
+                        queue.push(n);
+                    }
+                });
+            }
+
+            const cellsArr = Array.from(islandCells);
+            const numsArr = Array.from(islandNumbers);
+
+            if (numsArr.length === 0) {
                 const { rows, cols, mines } = CONFIG[currentDifficulty];
                 const remClosed = (rows * cols) - revealedCount - flaggedCount;
-                const glob = remClosed > 0 ? (mines - flaggedCount) / remClosed : 0;
-                return Math.max(0, (1 - glob) * 100);
+                return Math.max(0, (1 - ((mines - flaggedCount) / remClosed)) * 100);
             }
-            return Math.max(0, (1 - minRisk) * 100);
+
+            // 3. Optimized Backtracking
+            let validConfigs = 0;
+            let safeInConfigs = 0;
+            const assignment = new Map(); // Cell -> Boolean (isMine)
+
+            function backtrack(idx) {
+                if (idx === cellsArr.length) {
+                    validConfigs++;
+                    if (!assignment.get(targetCell)) safeInConfigs++;
+                    return;
+                }
+
+                const cell = cellsArr[idx];
+                
+                // Try SAFE
+                assignment.set(cell, false);
+                if (checkLocalConstraints(cell)) backtrack(idx + 1);
+
+                // Try MINE
+                assignment.set(cell, true);
+                if (checkLocalConstraints(cell)) backtrack(idx + 1);
+
+                assignment.delete(cell);
+            }
+
+            function checkLocalConstraints(lastAssignedCell) {
+                // Only check numbers adjacent to the cell we just assigned
+                const adjNums = getNeighbors(lastAssignedCell.r, lastAssignedCell.c).filter(n => islandNumbers.has(n));
+                for (const numCell of adjNums) {
+                    const neighbors = getNeighbors(numCell.r, numCell.c);
+                    let mines = neighbors.filter(n => n.isFlagged).length;
+                    let unknowns = 0;
+
+                    for (const n of neighbors) {
+                        if (assignment.has(n)) {
+                            if (assignment.get(n)) mines++;
+                        } else if (!n.isRevealed && !n.isFlagged) {
+                            unknowns++;
+                        }
+                    }
+
+                    if (mines > numCell.neighborCount) return false;
+                    if (mines + unknowns < numCell.neighborCount) return false;
+                }
+                return true;
+            }
+
+            backtrack(0);
+
+            if (validConfigs > 0) return (safeInConfigs / validConfigs) * 100;
+            
+            // Fallback for cases where backtracking hits performance limits
+            return 50.0;
         }
 
         function showHint(r, c, e) {
@@ -854,6 +936,8 @@
 
         function stopReplay() {
             if (replayReq) cancelAnimationFrame(replayReq);
+            const cursor = document.getElementById('replay-cursor');
+            if (cursor) cursor.style.display = 'none';
             if (replayMode) {
                 replayMode = false; currentReplayData = null;
                 document.getElementById('replay-controls').style.display = 'none';
@@ -865,10 +949,16 @@
         function initGame(difficulty) {
             if (difficulty) currentDifficulty = difficulty;
             const { rows, cols, mines } = CONFIG[currentDifficulty];
-            stopSolver(); if (!replayMode) { if (replayReq) cancelAnimationFrame(replayReq); document.getElementById('replay-controls').style.display = 'none'; }
+            stopSolver();
+            const cursor = document.getElementById('replay-cursor');
+            if (!replayMode) {
+                if (replayReq) cancelAnimationFrame(replayReq);
+                document.getElementById('replay-controls').style.display = 'none';
+                if (cursor) cursor.style.display = 'none';
+            }
             cancelAnimationFrame(timerRequest); timerRequest = null; startTime = 0; clicks = 0; total3BV = 0;
             isGameOver = false; isFirstClick = true; revealedCount = 0; flaggedCount = 0;
-            if (!replayMode) { wasSolverUsed = false; wasHintUsed = false; gameLog = []; mineLocations = []; clickTimes = []; untrustedClicks = 0; }
+            if (!replayMode) { wasSolverUsed = false; wasHintUsed = isHintActive; gameLog = []; mineLocations = []; clickTimes = []; untrustedClicks = 0; }
             document.getElementById('result-banner').textContent = ''; document.getElementById('stats-panel-frame').style.visibility = 'hidden'; document.getElementById('timer').textContent = '000';
             updateUI(); setSmiley('smile'); if (!replayMode) { updateRankUI(); loadRankings(); }
             const boardEl = document.getElementById('board'); boardEl.style.gridTemplateColumns = `repeat(${cols}, 24px)`; boardEl.innerHTML = ''; board = [];
