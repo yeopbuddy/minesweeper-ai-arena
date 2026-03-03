@@ -909,9 +909,9 @@
             return neighbors;
         }
 
-        function handleReveal(r, c, e = null) {
+        function handleReveal(r, c, e = null, skipRecord = false) {
             if (isGameOver || board[r][c].isFlagged || board[r][c].isRevealed) return;
-            recordAction('reveal', r, c, e);
+            if (!skipRecord) recordAction('reveal', r, c, e);
             if (isFirstClick) { 
                 isFirstClick = false; generateMines(r, c, replayMode ? currentReplayData.mines : null); startTime = performance.now(); startTimer(); 
             }
@@ -924,7 +924,7 @@
             recordAction('chord', r, c, e); const neighbors = getNeighbors(r, c);
             if (neighbors.filter(n => n.isFlagged).length === cell.neighborCount) {
                 let any = false; neighbors.forEach(n => { if (!n.isRevealed && !n.isFlagged) any = true; });
-                if (any) clicks++; neighbors.forEach(n => { if (!n.isRevealed && !n.isFlagged) handleReveal(n.r, n.c); });
+                if (any) clicks++; neighbors.forEach(n => { if (!n.isRevealed && !n.isFlagged) handleReveal(n.r, n.c, null, true); });
             }
         }
 
