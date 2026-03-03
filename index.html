@@ -500,6 +500,9 @@
         let currentRankDifficulty = 'beginner', currentRankCategory = 'solver';
         let lastFinalTime = 0, loadedRecords = {};
 
+        let isBoardAuthentic = false, boardHash = "";
+        function generateHash(mines) { return mines.map(m => `${m.r},${m.c}`).sort().join('|'); }
+
         function changeReplaySpeed(delta) {
             let idx = REPLAY_SPEEDS.indexOf(replaySpeed);
             idx = Math.max(0, Math.min(REPLAY_SPEEDS.length - 1, idx + delta));
@@ -723,7 +726,8 @@
         }
 
         async function checkRanking(time, difficulty) {
-            if (!window.db || !window.dbUtils || replayMode || difficulty === 'custom') return;
+            if (!window.db || !window.dbUtils || replayMode || difficulty === 'custom' || !isBoardAuthentic) return;
+            if (boardHash !== generateHash(mineLocations)) { console.error("Integrity check failed."); return; }
             let category = "physical";
             if (wasSolverUsed || untrustedClicks > 0 || isBotRhythm(clickTimes)) category = "solver";
             else if (wasHintUsed) category = "hint";
@@ -738,11 +742,12 @@
         }
 
         async function submitRanking() {
-            if (!gameLog || gameLog.length === 0) {
-                alert("Invalid game: No actions recorded.");
+            if (!gameLog || gameLog.length === 0 || !isBoardAuthentic) {
+                alert("Invalid game: Integrity check failed.");
                 closeModal();
                 return;
             }
+            if (boardHash !== generateHash(mineLocations)) { alert("Cheat detected: Board manipulation."); closeModal(); return; }
             const name = document.getElementById('player-name').value.trim() || "Anonymous";
             const country = document.getElementById('player-country').value;
             if (!window.dbUtils) return;
@@ -831,8 +836,8 @@
         window.playReplay = function(docId) {
             let record = loadedRecords[docId]; if (!record || !record.log) return alert("No replay.");
             stopSolver(); if (replayReq) cancelAnimationFrame(replayReq);
-            
-            replayMode = true; currentReplayData = record;
+
+            replayMode = true; currentReplayData = record; isBoardAuthentic = false;
             replayTotalTime = record.log[record.log.length - 1].t;
             replayCurrentTime = 0; replayLogIndex = 0; isReplayPaused = false;
             replaySpeed = 1.0; document.getElementById('speed-display').textContent = "1.0x";
@@ -948,13 +953,14 @@
 
         function generateMines(excludeR, excludeC, replayMines = null) {
             const { rows, cols, mines } = CONFIG[currentDifficulty];
-            if (replayMines) { replayMines.forEach(m => board[m.r][m.c].isMine = true); }
+            if (replayMines) { replayMines.forEach(m => board[m.r][m.c].isMine = true); isBoardAuthentic = false; }
             else {
                 let placed = 0; mineLocations = [];
                 while (placed < mines) {
                     const r = Math.floor(Math.random() * rows), c = Math.floor(Math.random() * cols);
                     if (!board[r][c].isMine && (Math.abs(r - excludeR) > 1 || Math.abs(c - excludeC) > 1)) { board[r][c].isMine = true; mineLocations.push({r, c}); placed++; }
                 }
+                isBoardAuthentic = true; boardHash = generateHash(mineLocations);
             }
             for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) if (!board[r][c].isMine) board[r][c].neighborCount = getNeighbors(r, c).filter(n => n.isMine).length;
             total3BV = calculate3BV();
