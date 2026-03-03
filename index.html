@@ -194,7 +194,13 @@
         .modal-box button.submit-btn { border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; background: #c0c0c0; padding: 8px 30px; cursor: pointer; font-weight: bold; font-size: 14px; }
         .modal-box .close-btn { position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; background: #c0c0c0; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; }
 
-        #replay-banner { position: absolute; top: -45px; left: 50%; transform: translateX(-50%); background: rgba(255, 0, 0, 0.9); color: white; padding: 8px 15px; font-weight: bold; border-radius: 5px; z-index: 3000; cursor: pointer; display: none; border: 2px solid white; white-space: nowrap; font-size: 12px; }
+        #replay-controls { display: none; width: 100%; margin-top: 10px; box-sizing: border-box; }
+        .replay-inner { display: flex; align-items: center; padding: 5px 10px; gap: 10px; }
+        .replay-btn { border: 2px solid; border-color: #ffffff #808080 #808080 #ffffff; background: #c0c0c0; padding: 2px 8px; cursor: pointer; font-size: 12px; font-weight: bold; font-family: inherit; min-width: 40px; }
+        .replay-btn:active { border-color: #808080 #ffffff #ffffff #808080; padding: 3px 7px 1px 9px; }
+        .replay-progress-wrapper { flex: 1; height: 12px; background: #808080; position: relative; border: 2px solid; border-color: #808080 #ffffff #ffffff #808080; cursor: pointer; }
+        #replay-progress-bar { height: 100%; background: #000080; width: 0%; transition: width 0.1s linear; }
+        #replay-time { font-family: 'Share Tech Mono', monospace; font-size: 12px; width: 90px; text-align: center; background: #000; color: #00ff00; padding: 2px 4px; border: 2px solid; border-color: #808080 #ffffff #ffffff #808080; }
 
         /* Donation buttons in menu */
         .menu-donation { display: none; gap: 5px; margin-left: 10px; }
@@ -396,7 +402,16 @@
 
         <!-- Center -->
         <div class="game-column">
-            <div id="replay-banner" onclick="stopReplay()">🔴 WATCHING REPLAY - CLICK TO STOP</div>
+            <div id="replay-controls" class="game-outer-frame">
+                <div class="inset-frame replay-inner">
+                    <button id="btn-replay-play" class="replay-btn" onclick="toggleReplayPause()">⏸</button>
+                    <div class="replay-progress-wrapper" onclick="seekReplay(event)">
+                        <div id="replay-progress-bar"></div>
+                    </div>
+                    <div id="replay-time">0.0s / 0.0s</div>
+                    <button class="replay-btn" onclick="stopReplay()">CLOSE</button>
+                </div>
+            </div>
             <div class="board-scroll-wrapper">
                 <div class="game-outer-frame">
                     <div class="inset-frame stats-bar">
@@ -470,15 +485,78 @@
             custom: { rows: 16, cols: 30, mines: 99 }
         };
 
-        let currentDifficulty = 'beginner';
-        let board = [], revealedCount = 0, flaggedCount = 0, isGameOver = false, isFirstClick = true;
-        let timerRequest = null, startTime = 0, total3BV = 0, clicks = 0;
-        let solverInterval = null, isHintActive = false;
-        let wasSolverUsed = false, wasHintUsed = false;
-        let gameLog = [], mineLocations = [], clickTimes = [], untrustedClicks = 0;
-        let replayMode = false, replayTimeouts = [], currentReplayData = null;
+        let replayMode = false, currentReplayData = null;
+        let isReplayPaused = false, replayCurrentTime = 0, replayTotalTime = 0, replayLogIndex = 0, replayReq = null;
         let currentRankDifficulty = 'beginner', currentRankCategory = 'solver';
         let lastFinalTime = 0, loadedRecords = {};
+
+        function updateReplayUI() {
+            if (!replayMode) return;
+            const progress = replayTotalTime > 0 ? (replayCurrentTime / replayTotalTime) * 100 : 0;
+            document.getElementById('replay-progress-bar').style.width = `${progress}%`;
+            document.getElementById('replay-time').textContent = `${(replayCurrentTime / 1000).toFixed(1)}s / ${(replayTotalTime / 1000).toFixed(1)}s`;
+        }
+
+        function toggleReplayPause() {
+            isReplayPaused = !isReplayPaused;
+            document.getElementById('btn-replay-play').textContent = isReplayPaused ? '▶' : '⏸';
+            if (!isReplayPaused) {
+                window.lastReplayTimestamp = performance.now();
+                replayReq = requestAnimationFrame(replayLoop);
+            }
+        }
+
+        function seekReplay(e) {
+            if (!replayMode || !currentReplayData) return;
+            const wrapper = e.currentTarget;
+            const rect = wrapper.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            const seekTime = pos * replayTotalTime;
+            
+            replayCurrentTime = seekTime;
+            const record = currentReplayData;
+            replayMode = false;
+            initGame(record.difficulty);
+            replayMode = true; currentReplayData = record;
+            document.getElementById('replay-controls').style.display = 'block';
+            
+            replayLogIndex = 0;
+            while (replayLogIndex < record.log.length && record.log[replayLogIndex].t <= replayCurrentTime) {
+                const action = record.log[replayLogIndex];
+                if (action.type === 'reveal') handleReveal(action.r, action.c, null);
+                else if (action.type === 'flag') handleFlag(action.r, action.c, null);
+                else if (action.type === 'chord') handleChording(action.r, action.c, null);
+                replayLogIndex++;
+            }
+            updateReplayUI();
+        }
+
+        function replayLoop(timestamp) {
+            if (!replayMode || isReplayPaused) return;
+            if (!window.lastReplayTimestamp) window.lastReplayTimestamp = timestamp;
+            const delta = timestamp - window.lastReplayTimestamp;
+            window.lastReplayTimestamp = timestamp;
+
+            replayCurrentTime += delta;
+            if (replayCurrentTime > replayTotalTime) replayCurrentTime = replayTotalTime;
+
+            while (replayLogIndex < currentReplayData.log.length && currentReplayData.log[replayLogIndex].t <= replayCurrentTime) {
+                const action = currentReplayData.log[replayLogIndex];
+                showClickIndicator(action.r, action.c);
+                if (action.type === 'reveal') handleReveal(action.r, action.c, null);
+                else if (action.type === 'flag') handleFlag(action.r, action.c, null);
+                else if (action.type === 'chord') handleChording(action.r, action.c, null);
+                replayLogIndex++;
+            }
+
+            updateReplayUI();
+            if (replayCurrentTime < replayTotalTime) {
+                replayReq = requestAnimationFrame(replayLoop);
+            } else {
+                isReplayPaused = true;
+                document.getElementById('btn-replay-play').textContent = '▶';
+            }
+        }
 
         function fireConfetti() {
             const count = 200;
@@ -650,23 +728,27 @@
 
         window.playReplay = function(docId) {
             let record = loadedRecords[docId]; if (!record || !record.log) return alert("No replay.");
-            stopSolver(); stopReplay(); initGame(record.difficulty);
-            replayMode = true; currentReplayData = record; document.getElementById('replay-banner').style.display = 'block';
+            stopSolver(); if (replayReq) cancelAnimationFrame(replayReq);
+            
+            replayMode = true; currentReplayData = record;
+            replayTotalTime = record.log[record.log.length - 1].t;
+            replayCurrentTime = 0; replayLogIndex = 0; isReplayPaused = false;
+            window.lastReplayTimestamp = performance.now();
+            
+            initGame(record.difficulty);
+            replayMode = true; currentReplayData = record;
+            document.getElementById('replay-controls').style.display = 'block';
+            document.getElementById('btn-replay-play').textContent = '⏸';
             document.querySelectorAll('#main-menu button, #lboard-cats button, #lboard-diffs button').forEach(b => b.disabled = true);
-            record.log.forEach(action => {
-                replayTimeouts.push(setTimeout(() => {
-                    showClickIndicator(action.r, action.c);
-                    if (action.type === 'reveal') handleReveal(action.r, action.c, null);
-                    else if (action.type === 'flag') handleFlag(action.r, action.c, null);
-                    else if (action.type === 'chord') handleChording(action.r, action.c, null);
-                }, action.t));
-            });
+            
+            replayReq = requestAnimationFrame(replayLoop);
         };
 
         function stopReplay() {
-            replayTimeouts.forEach(clearTimeout); replayTimeouts = [];
+            if (replayReq) cancelAnimationFrame(replayReq);
             if (replayMode) {
-                replayMode = false; currentReplayData = null; document.getElementById('replay-banner').style.display = 'none';
+                replayMode = false; currentReplayData = null;
+                document.getElementById('replay-controls').style.display = 'none';
                 document.querySelectorAll('#main-menu button, #lboard-cats button, #lboard-diffs button').forEach(b => b.disabled = false);
                 initGame(currentDifficulty);
             }
@@ -675,7 +757,7 @@
         function initGame(difficulty) {
             if (difficulty) currentDifficulty = difficulty;
             const { rows, cols, mines } = CONFIG[currentDifficulty];
-            stopSolver(); if (!replayMode) { replayTimeouts.forEach(clearTimeout); replayTimeouts = []; document.getElementById('replay-banner').style.display = 'none'; }
+            stopSolver(); if (!replayMode) { if (replayReq) cancelAnimationFrame(replayReq); document.getElementById('replay-controls').style.display = 'none'; }
             cancelAnimationFrame(timerRequest); timerRequest = null; startTime = 0; clicks = 0; total3BV = 0;
             isGameOver = false; isFirstClick = true; revealedCount = 0; flaggedCount = 0;
             if (!replayMode) { wasSolverUsed = false; wasHintUsed = false; gameLog = []; mineLocations = []; clickTimes = []; untrustedClicks = 0; }
