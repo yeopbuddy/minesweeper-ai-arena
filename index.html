@@ -668,8 +668,9 @@
             return stdDev < 15;
         }
 
+        let isRecordingChord = false;
         function recordAction(type, r, c, e) {
-            if (replayMode) return;
+            if (replayMode || isRecordingChord && type === 'reveal') return;
             if (e) { if (!e.isTrusted && !wasSolverUsed) untrustedClicks++; clickTimes.push(performance.now()); }
             let t = startTime === 0 ? 0 : performance.now() - startTime;
             gameLog.push({ t: Math.floor(t), type, r, c });
