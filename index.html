@@ -200,7 +200,10 @@
         .replay-btn:active { border-color: #808080 #ffffff #ffffff #808080; padding: 3px 7px 1px 9px; }
         .replay-progress-wrapper { flex: 1; height: 12px; background: #808080; position: relative; border: 2px solid; border-color: #808080 #ffffff #ffffff #808080; cursor: pointer; }
         #replay-progress-bar { height: 100%; background: #000080; width: 0%; transition: width 0.1s linear; }
-        #replay-time { font-family: 'Share Tech Mono', monospace; font-size: 12px; width: 90px; text-align: center; background: #000; color: #00ff00; padding: 2px 4px; border: 2px solid; border-color: #808080 #ffffff #ffffff #808080; }
+        .replay-speed-ctrl { display: flex; align-items: center; gap: 2px; background: #000; padding: 2px; border: 2px solid; border-color: #808080 #ffffff #ffffff #808080; }
+        .speed-btn { background: #c0c0c0; border: 1px solid #808080; cursor: pointer; font-size: 10px; font-weight: bold; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+        .speed-btn:active { background: #808080; }
+        #speed-display { font-family: 'Share Tech Mono', monospace; font-size: 11px; width: 45px; text-align: center; color: #00ff00; }
 
         /* Donation buttons in menu */
         .menu-donation { display: none; gap: 5px; margin-left: 10px; }
@@ -403,7 +406,11 @@
                     <div class="replay-progress-wrapper" onclick="seekReplay(event)">
                         <div id="replay-progress-bar"></div>
                     </div>
-                    <div id="replay-time">0.0s / 0.0s</div>
+                    <div class="replay-speed-ctrl">
+                        <button class="speed-btn" onclick="changeReplaySpeed(-1)">-</button>
+                        <div id="speed-display">1.0x</div>
+                        <button class="speed-btn" onclick="changeReplaySpeed(1)">+</button>
+                    </div>
                     <button class="replay-btn" onclick="stopReplay()">CLOSE</button>
                 </div>
             </div>
@@ -489,14 +496,21 @@
         
         let replayMode = false, currentReplayData = null;
         let isReplayPaused = false, replayCurrentTime = 0, replayTotalTime = 0, replayLogIndex = 0, replayReq = null;
+        let replaySpeed = 1.0; const REPLAY_SPEEDS = [0.25, 0.5, 1.0, 1.5, 2.0];
         let currentRankDifficulty = 'beginner', currentRankCategory = 'solver';
         let lastFinalTime = 0, loadedRecords = {};
+
+        function changeReplaySpeed(delta) {
+            let idx = REPLAY_SPEEDS.indexOf(replaySpeed);
+            idx = Math.max(0, Math.min(REPLAY_SPEEDS.length - 1, idx + delta));
+            replaySpeed = REPLAY_SPEEDS[idx];
+            document.getElementById('speed-display').textContent = `${replaySpeed.toFixed(replaySpeed === 1 || replaySpeed === 2 ? 1 : 2)}x`;
+        }
 
         function updateReplayUI() {
             if (!replayMode) return;
             const progress = replayTotalTime > 0 ? (replayCurrentTime / replayTotalTime) * 100 : 0;
             document.getElementById('replay-progress-bar').style.width = `${progress}%`;
-            document.getElementById('replay-time').textContent = `${(replayCurrentTime / 1000).toFixed(1)}s / ${(replayTotalTime / 1000).toFixed(1)}s`;
         }
 
         function toggleReplayPause() {
@@ -530,13 +544,18 @@
                 else if (action.type === 'chord') handleChording(action.r, action.c, null);
                 replayLogIndex++;
             }
+            // Update cursor position after seek
+            if (replayLogIndex > 0) {
+                const lastAction = record.log[replayLogIndex - 1];
+                showReplayCursor(lastAction.r, lastAction.c);
+            }
             updateReplayUI();
         }
 
         function replayLoop(timestamp) {
             if (!replayMode || isReplayPaused) return;
             if (!window.lastReplayTimestamp) window.lastReplayTimestamp = timestamp;
-            const delta = timestamp - window.lastReplayTimestamp;
+            const delta = (timestamp - window.lastReplayTimestamp) * replaySpeed;
             window.lastReplayTimestamp = timestamp;
 
             replayCurrentTime += delta;
@@ -544,7 +563,7 @@
 
             while (replayLogIndex < currentReplayData.log.length && currentReplayData.log[replayLogIndex].t <= replayCurrentTime) {
                 const action = currentReplayData.log[replayLogIndex];
-                showClickIndicator(action.r, action.c);
+                showReplayCursor(action.r, action.c);
                 if (action.type === 'reveal') handleReveal(action.r, action.c, null);
                 else if (action.type === 'flag') handleFlag(action.r, action.c, null);
                 else if (action.type === 'chord') handleChording(action.r, action.c, null);
