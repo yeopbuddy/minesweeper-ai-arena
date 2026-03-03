@@ -267,7 +267,7 @@
         #replay-cursor {
             position: absolute; width: 22px; height: 22px; pointer-events: none;
             z-index: 10000; display: none; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.4));
-            transition: left 0.15s linear, top 0.15s linear, transform 0.05s;
+            transition: transform 0.05s;
         }
     </style>
 </head>
@@ -561,12 +561,24 @@
             replayCurrentTime += delta;
             if (replayCurrentTime > replayTotalTime) replayCurrentTime = replayTotalTime;
 
-            while (replayLogIndex < currentReplayData.log.length && currentReplayData.log[replayLogIndex].t <= replayCurrentTime) {
-                const action = currentReplayData.log[replayLogIndex];
-                showReplayCursor(action.r, action.c);
-                if (action.type === 'reveal') handleReveal(action.r, action.c, null);
-                else if (action.type === 'flag') handleFlag(action.r, action.c, null);
-                else if (action.type === 'chord') handleChording(action.r, action.c, null);
+            // Manual Interpolation for smooth, synced movement
+            const log = currentReplayData.log;
+            if (replayLogIndex < log.length) {
+                const nextAction = log[replayLogIndex];
+                const lastAction = replayLogIndex > 0 ? log[replayLogIndex - 1] : { t: 0, r: log[0].r, c: log[0].c };
+                const duration = nextAction.t - lastAction.t;
+                if (duration > 0) {
+                    const ratio = Math.max(0, Math.min(1, (replayCurrentTime - lastAction.t) / duration));
+                    moveReplayCursorInterpolated(lastAction.r, lastAction.c, nextAction.r, nextAction.c, ratio);
+                } else {
+                    moveReplayCursor(nextAction.r, nextAction.c);
+                }
+            }
+
+            while (replayLogIndex < log.length && log[replayLogIndex].t <= replayCurrentTime) {
+                const action = log[replayLogIndex];
+                moveReplayCursor(action.r, action.c);
+                showReplayClick(action.r, action.c, action.type);
                 replayLogIndex++;
             }
 
@@ -577,6 +589,62 @@
                 isReplayPaused = true;
                 document.getElementById('btn-replay-play').textContent = '▶';
             }
+        }
+
+        function moveReplayCursorInterpolated(r1, c1, r2, c2, ratio) {
+            let cursor = document.getElementById('replay-cursor');
+            if (!cursor) return;
+            const cell1 = board[r1][c1].el.getBoundingClientRect();
+            const cell2 = board[r2][c2].el.getBoundingClientRect();
+            const x1 = cell1.left + cell1.width / 2, y1 = cell1.top + cell1.height / 2;
+            const x2 = cell2.left + cell2.width / 2, y2 = cell2.top + cell2.height / 2;
+            cursor.style.display = 'block';
+            cursor.style.left = `${x1 + (x2 - x1) * ratio}px`;
+            cursor.style.top = `${y1 + (y2 - y1) * ratio}px`;
+        }
+
+        function moveReplayCursor(r, c) {
+            let cursor = document.getElementById('replay-cursor');
+            if (!cursor) {
+                cursor = document.createElement('div');
+                cursor.id = 'replay-cursor';
+                cursor.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24">
+                    <path d="M5.5 3.17V20l4.58-4.59 2.58 5.92 2.33-1.01-2.54-5.83h5.88L5.5 3.17z" fill="white" stroke="black" stroke-width="1.5"/>
+                </svg>`;
+                document.body.appendChild(cursor);
+            }
+            const cell = board[r][c].el;
+            const rect = cell.getBoundingClientRect();
+            cursor.style.display = 'block';
+            cursor.style.left = `${rect.left + rect.width / 2}px`;
+            cursor.style.top = `${rect.top + rect.height / 2}px`;
+        }
+
+        function showReplayClick(r, c, type) {
+            const cursor = document.getElementById('replay-cursor');
+            if (cursor) {
+                cursor.style.transform = 'scale(0.8)';
+                setTimeout(() => { if (cursor) cursor.style.transform = 'scale(1)'; }, 100);
+            }
+            const cell = board[r][c];
+            if (type === 'reveal') {
+                if (!cell.isRevealed && !cell.isFlagged) {
+                    cell.el.classList.remove('hd_closed'); cell.el.classList.add('hd_active');
+                    setTimeout(() => { if (replayMode) handleReveal(r, c, null); }, 100);
+                }
+            } else if (type === 'chord') {
+                if (cell.isRevealed && cell.neighborCount > 0) {
+                    const neighbors = getNeighbors(r, c);
+                    neighbors.forEach(n => { if (!n.isRevealed && !n.isFlagged) { n.el.classList.remove('hd_closed'); n.el.classList.add('hd_active'); } });
+                    setTimeout(() => { if (replayMode) handleChording(r, c, null); }, 100);
+                }
+            } else if (type === 'flag') {
+                handleFlag(r, c, null);
+            }
+        }
+
+        function showClickIndicator(r, c) {
+            moveReplayCursor(r, c);
         }
 
         function fireConfetti() {
