@@ -254,9 +254,16 @@
             font-weight: normal; font-family: 'Tahoma', sans-serif;
         }
         .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
-        .tooltip-text::after {
-            content: ""; position: absolute; bottom: 100%; left: 50%; margin-left: -5px;
-            border-width: 5px; border-style: solid; border-color: transparent transparent rgba(0,0,0,0.8) transparent;
+        /* Click Indicator for Replay */
+        .click-indicator {
+            position: absolute; width: 20px; height: 20px; border-radius: 50%;
+            border: 2px solid rgba(255, 0, 0, 0.8); background: rgba(255, 0, 0, 0.2);
+            pointer-events: none; transform: translate(-50%, -50%);
+            animation: click-ripple 0.4s ease-out forwards; z-index: 10000;
+        }
+        @keyframes click-ripple {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
         }
     </style>
 </head>
@@ -630,6 +637,17 @@
         }
         function hideHint() { document.getElementById('hint-overlay').style.display = 'none'; }
 
+        function showClickIndicator(r, c) {
+            const cell = board[r][c].el;
+            const rect = cell.getBoundingClientRect();
+            const indicator = document.createElement('div');
+            indicator.className = 'click-indicator';
+            indicator.style.left = `${rect.left + rect.width / 2}px`;
+            indicator.style.top = `${rect.top + rect.height / 2}px`;
+            document.body.appendChild(indicator);
+            setTimeout(() => indicator.remove(), 400);
+        }
+
         window.playReplay = function(docId) {
             let record = loadedRecords[docId]; if (!record || !record.log) return alert("No replay.");
             stopSolver(); stopReplay(); initGame(record.difficulty);
@@ -637,6 +655,7 @@
             document.querySelectorAll('#main-menu button, #lboard-cats button, #lboard-diffs button').forEach(b => b.disabled = true);
             record.log.forEach(action => {
                 replayTimeouts.push(setTimeout(() => {
+                    showClickIndicator(action.r, action.c);
                     if (action.type === 'reveal') handleReveal(action.r, action.c, null);
                     else if (action.type === 'flag') handleFlag(action.r, action.c, null);
                     else if (action.type === 'chord') handleChording(action.r, action.c, null);
