@@ -539,7 +539,7 @@
             replayLogIndex = 0;
             while (replayLogIndex < record.log.length && record.log[replayLogIndex].t <= replayCurrentTime) {
                 const action = record.log[replayLogIndex];
-                if (action.type === 'reveal') handleReveal(action.r, action.c, null);
+                if (action.type === 'reveal') handleReveal(action.r, action.c, null, true);
                 else if (action.type === 'flag') handleFlag(action.r, action.c, null);
                 else if (action.type === 'chord') handleChording(action.r, action.c, null);
                 replayLogIndex++;
