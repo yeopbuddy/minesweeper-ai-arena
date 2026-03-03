@@ -260,16 +260,11 @@
             font-weight: normal; font-family: 'Tahoma', sans-serif;
         }
         .tooltip-container:hover .tooltip-text { visibility: visible; opacity: 1; }
-        /* Click Indicator for Replay */
-        .click-indicator {
-            position: absolute; width: 20px; height: 20px; border-radius: 50%;
-            border: 2px solid rgba(255, 0, 0, 0.8); background: rgba(255, 0, 0, 0.2);
-            pointer-events: none; transform: translate(-50%, -50%);
-            animation: click-ripple 0.4s ease-out forwards; z-index: 10000;
-        }
-        @keyframes click-ripple {
-            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
-            100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+        /* Replay Cursor */
+        #replay-cursor {
+            position: absolute; width: 22px; height: 22px; pointer-events: none;
+            z-index: 10000; display: none; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.4));
+            transition: left 0.1s ease-out, top 0.1s ease-out, transform 0.05s;
         }
     </style>
 </head>
@@ -722,15 +717,27 @@
         }
         function hideHint() { document.getElementById('hint-overlay').style.display = 'none'; }
 
-        function showClickIndicator(r, c) {
+        function showReplayCursor(r, c) {
+            let cursor = document.getElementById('replay-cursor');
+            if (!cursor) {
+                cursor = document.createElement('div');
+                cursor.id = 'replay-cursor';
+                cursor.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24">
+                    <path d="M5.5 3.17V20l4.58-4.59 2.58 5.92 2.33-1.01-2.54-5.83h5.88L5.5 3.17z" fill="white" stroke="black" stroke-width="1.5"/>
+                </svg>`;
+                document.body.appendChild(cursor);
+            }
             const cell = board[r][c].el;
             const rect = cell.getBoundingClientRect();
-            const indicator = document.createElement('div');
-            indicator.className = 'click-indicator';
-            indicator.style.left = `${rect.left + rect.width / 2}px`;
-            indicator.style.top = `${rect.top + rect.height / 2}px`;
-            document.body.appendChild(indicator);
-            setTimeout(() => indicator.remove(), 400);
+            cursor.style.display = 'block';
+            cursor.style.left = `${rect.left + rect.width / 2}px`;
+            cursor.style.top = `${rect.top + rect.height / 2}px`;
+            cursor.style.transform = 'scale(0.8)';
+            setTimeout(() => { if (cursor) cursor.style.transform = 'scale(1)'; }, 100);
+        }
+
+        function showClickIndicator(r, c) {
+            showReplayCursor(r, c);
         }
 
         window.playReplay = function(docId) {
