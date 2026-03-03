@@ -485,6 +485,13 @@
             custom: { rows: 16, cols: 30, mines: 99 }
         };
 
+        let currentDifficulty = 'beginner';
+        let board = [], revealedCount = 0, flaggedCount = 0, isGameOver = false, isFirstClick = true;
+        let timerRequest = null, startTime = 0, total3BV = 0, clicks = 0;
+        let solverInterval = null, isHintActive = false;
+        let wasSolverUsed = false, wasHintUsed = false;
+        let gameLog = [], mineLocations = [], clickTimes = [], untrustedClicks = 0;
+        
         let replayMode = false, currentReplayData = null;
         let isReplayPaused = false, replayCurrentTime = 0, replayTotalTime = 0, replayLogIndex = 0, replayReq = null;
         let currentRankDifficulty = 'beginner', currentRankCategory = 'solver';
